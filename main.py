@@ -1,9 +1,10 @@
 import logging
 import os
+from functools import wraps
 
 import humanize
 import youtube_dl
-from telegram import ReplyKeyboardRemove, Update, ReplyKeyboardMarkup
+from telegram import ReplyKeyboardRemove, Update, ReplyKeyboardMarkup, ChatAction
 from telegram.ext import ConversationHandler, Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 logging.basicConfig(level=logging.DEBUG,
@@ -50,6 +51,7 @@ def start(update: Update, _: CallbackContext) -> int:
 
 
 def video(update: Update, context: CallbackContext) -> int:
+    context.bot.send_chat_action(chat_id=update.effective_message.chat_id, action=ChatAction.TYPING)
     video_url = update.message.text
     if not video_url.startswith("https://www.youtube.com/watch?v="):
         update.message.reply_text(f"that is not a valid youtube video")
@@ -78,6 +80,7 @@ def option(update: Update, context: CallbackContext) -> int:
     if update.message.text in context.user_data['video_options']:
         try:
             if "audio only" in update.message.text:
+                context.bot.send_chat_action(chat_id=update.effective_message.chat_id, action=ChatAction.UPLOAD_AUDIO)
                 ext = "mp3"
                 output_file = f'{context.user_data["video_title"]}.{ext}'
                 ydl_opts = {
@@ -93,6 +96,7 @@ def option(update: Update, context: CallbackContext) -> int:
                     ydl.download([context.user_data['video_url']])
                 update.message.reply_audio(audio=open(output_file, 'rb'))
             else:
+                context.bot.send_chat_action(chat_id=update.effective_message.chat_id, action=ChatAction.UPLOAD_VIDEO)
                 ext = context.user_data['video_options'][update.message.text]['ext']
 
                 output_file = f'{context.user_data["video_title"]}.{ext}'
