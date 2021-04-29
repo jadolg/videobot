@@ -43,7 +43,7 @@ def download_options(video_url):
                 'url': video_format['url']
             })
 
-    return video_options
+    return video_options, video['title']
 
 
 def start(update: Update, _: CallbackContext) -> int:
@@ -58,8 +58,10 @@ def video(update: Update, context: CallbackContext) -> int:
         update.message.reply_text(f"that is not a valid youtube video")
         return ConversationHandler.END
 
-    options = download_options(video_url)
+    options, title = download_options(video_url)
     context.user_data['video_url'] = video_url
+
+    context.user_data['video_title'] = "".join(x for x in title if x.isalnum())
 
     reply_keyboard = []
     indexed_options = {}
@@ -78,11 +80,34 @@ def video(update: Update, context: CallbackContext) -> int:
 def option(update: Update, context: CallbackContext) -> int:
     if update.message.text in context.user_data['video_options']:
         try:
-            url = context.user_data['video_options'][update.message.text]['url']
-            logger.info(f"Downloading {url}")
-            response = requests.get(url)
-            update.message.reply_video(video=response.content)
-            response.close()
+            if "audio only" in update.message.text:
+                ext = "mp3"
+                output_file = f'{context.user_data["video_title"]}.{ext}'
+                ydl_opts = {
+                    'format': context.user_data['video_options'][update.message.text]['format_id'],
+                    'outtmpl': output_file,
+                    'postprocessors': [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                        'preferredquality': '192',
+                    }],
+                }
+                with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([context.user_data['video_url']])
+                update.message.reply_audio(audio=open(output_file, 'rb'))
+            else:
+                ext = context.user_data['video_options'][update.message.text]['ext']
+
+                output_file = f'{context.user_data["video_title"]}.{ext}'
+                ydl_opts = {
+                    'format': context.user_data['video_options'][update.message.text]['format_id'],
+                    'outtmpl': output_file,
+                }
+
+                with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([context.user_data['video_url']])
+
+                update.message.reply_video(video=open(output_file, 'rb'))
         except Exception as a:
             print(a)
             update.message.reply_text(f"something went wrong :'(")
