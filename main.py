@@ -2,7 +2,6 @@ import logging
 import os
 
 import humanize
-import telegram
 import youtube_dl
 from telegram import ReplyKeyboardRemove, Update, ReplyKeyboardMarkup
 from telegram.ext import ConversationHandler, Updater, CommandHandler, MessageHandler, Filters, CallbackContext
@@ -12,7 +11,7 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-VIDEO, OPTION_SELECT = range(2)
+START, VIDEO, OPTION_SELECT = range(3)
 
 
 def download_options(video_url):
@@ -54,7 +53,7 @@ def video(update: Update, context: CallbackContext) -> int:
     video_url = update.message.text
     if not video_url.startswith("https://www.youtube.com/watch?v="):
         update.message.reply_text(f"that is not a valid youtube video")
-        return ConversationHandler.END
+        return VIDEO
 
     options, title = download_options(video_url)
     context.user_data['video_url'] = video_url
@@ -111,18 +110,23 @@ def option(update: Update, context: CallbackContext) -> int:
         except Exception as a:
             print(a)
             update.message.reply_text(f"something went wrong :'(")
+            return VIDEO
     else:
-        update.message.reply_text(f"that is not a valid youtube video")
+        update.message.reply_text(f"that is not a valid video option")
+        return OPTION_SELECT
 
-    return ConversationHandler.END
+    update.message.reply_text(f"I'm ready to download another video for you")
+    return VIDEO
 
 
-def cancel(bot, update, user_data):
+def cancel(update: Update, _: CallbackContext) -> int:
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
-    update.message.reply_text('bye', reply_markup=telegram.ReplyKeyboardMarkup([['/start']]))
-    user_data.clear()
-
+    reply_keyboard = [["/start"]]
+    update.message.reply_text(
+        'Bye! I hope we can talk again some day. Send /start to begin again.',
+        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+    )
     return ConversationHandler.END
 
 
@@ -134,12 +138,13 @@ conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
 
     states={
+        START: [MessageHandler(Filters.text, start, pass_user_data=True)],
         VIDEO: [MessageHandler(Filters.text, video, pass_user_data=True)],
         OPTION_SELECT: [MessageHandler(Filters.text, option, pass_user_data=True)],
     },
 
     fallbacks=[MessageHandler(Filters.text, cancel, pass_user_data=True),
-               CommandHandler('cancelar', cancel, pass_user_data=True)]
+               CommandHandler('cancel', cancel, pass_user_data=True)]
 )
 
 dp.add_handler(conv_handler)
