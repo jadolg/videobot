@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-START, VIDEO, OPTION_SELECT = range(3)
+VIDEO, OPTION_SELECT = range(2)
 
 
 def download_options(video_url):
@@ -141,7 +141,6 @@ conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
 
     states={
-        START: [MessageHandler(Filters.text, start, pass_user_data=True)],
         VIDEO: [MessageHandler(Filters.text, video, pass_user_data=True)],
         OPTION_SELECT: [MessageHandler(Filters.text, option, pass_user_data=True)],
     },
