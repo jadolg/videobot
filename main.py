@@ -53,7 +53,7 @@ def video(update: Update, context: CallbackContext) -> int:
     context.bot.send_chat_action(chat_id=update.effective_message.chat_id, action=ChatAction.TYPING)
     video_url = update.message.text
     logger.info("User %s trying to download %s", update.message.from_user, video_url)
-    if not video_url.startswith("https://www.youtube.com/watch?v=") or \
+    if not video_url.startswith("https://www.youtube.com/watch?v=") and \
             not video_url.startswith("https://www.youtu.be/"):
         update.message.reply_text(f"that is not a valid youtube video")
         return VIDEO
