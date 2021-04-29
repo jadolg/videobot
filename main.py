@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 
 import humanize
 import requests
@@ -33,12 +34,14 @@ def download_options(video_url):
     video_options = []
 
     for video_format in video['formats']:
-        video_options.append({
-            'ext': video_format['ext'],
-            'size': video_format['filesize'] if video_format['filesize'] else 0,
-            'format': video_format['format'],
-            'url': video_format['url']
-        })
+        if video_format['acodec'] != 'none':
+            video_options.append({
+                'ext': video_format['ext'],
+                'size': video_format['filesize'] if video_format['filesize'] else 0,
+                'format': video_format['format'],
+                'format_id': video_format['format_id'],
+                'url': video_format['url']
+            })
 
     return video_options
 
