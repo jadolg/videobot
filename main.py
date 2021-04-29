@@ -53,28 +53,29 @@ def video(update: Update, context: CallbackContext) -> int:
     context.bot.send_chat_action(chat_id=update.effective_message.chat_id, action=ChatAction.TYPING)
     video_url = update.message.text
     logger.info("User %s trying to download %s", update.message.from_user, video_url)
-    if not video_url.startswith("https://www.youtube.com/watch?v=") and \
-            not video_url.startswith("https://www.youtu.be/"):
+
+    try:
+        options, title = download_options(video_url)
+        context.user_data['video_url'] = video_url
+
+        context.user_data['video_title'] = "".join(x for x in title if x.isalnum())
+
+        reply_keyboard = []
+        indexed_options = {}
+        for option in options:
+            indexed_options[f"{option['format']} - {humanize.naturalsize(option['size'])}"] = option
+            reply_keyboard.append([f"{option['format']} - {humanize.naturalsize(option['size'])}"])
+        context.user_data['video_options'] = indexed_options
+        update.message.reply_text(
+            'Please select an option?',
+            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
+        )
+
+        return OPTION_SELECT
+    except Exception as e:
+        logger.error(e)
         update.message.reply_text(f"that is not a valid youtube video")
         return VIDEO
-
-    options, title = download_options(video_url)
-    context.user_data['video_url'] = video_url
-
-    context.user_data['video_title'] = "".join(x for x in title if x.isalnum())
-
-    reply_keyboard = []
-    indexed_options = {}
-    for option in options:
-        indexed_options[f"{option['format']} - {humanize.naturalsize(option['size'])}"] = option
-        reply_keyboard.append([f"{option['format']} - {humanize.naturalsize(option['size'])}"])
-    context.user_data['video_options'] = indexed_options
-    update.message.reply_text(
-        'Please select an option?',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
-    )
-
-    return OPTION_SELECT
 
 
 def option(update: Update, context: CallbackContext) -> int:
@@ -111,7 +112,6 @@ def option(update: Update, context: CallbackContext) -> int:
 
                 update.message.reply_video(video=open(output_file, 'rb'))
 
-            os.unlink(output_file)
         except Exception as a:
             print(a)
             update.message.reply_text(f"something went wrong :'(")
