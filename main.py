@@ -1,9 +1,7 @@
 import logging
 import os
-import uuid
 
 import humanize
-import requests
 import telegram
 import youtube_dl
 from telegram import ReplyKeyboardRemove, Update, ReplyKeyboardMarkup
@@ -108,6 +106,8 @@ def option(update: Update, context: CallbackContext) -> int:
                     ydl.download([context.user_data['video_url']])
 
                 update.message.reply_video(video=open(output_file, 'rb'))
+
+            os.unlink(output_file)
         except Exception as a:
             print(a)
             update.message.reply_text(f"something went wrong :'(")
