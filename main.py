@@ -96,7 +96,15 @@ def option(update: Update, context: CallbackContext) -> int:
                 }
                 with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([context.user_data['video_url']])
-                update.message.reply_audio(audio=open(output_file, 'rb'))
+                try:
+                    update.message.reply_audio(audio=open(output_file, 'rb'))
+                except:
+                    update.message.reply_text(
+                        text=f"Looks like something went wrong uploading the audio. "
+                             f"It possibly is bigger than 50Mb. "
+                             f"Here's an alternative link you can use "
+                             f"{context.user_data['video_options'][update.message.text]['url']}")
+
             else:
                 context.bot.send_chat_action(chat_id=update.effective_message.chat_id, action=ChatAction.UPLOAD_VIDEO)
                 ext = context.user_data['video_options'][update.message.text]['ext']
@@ -109,8 +117,14 @@ def option(update: Update, context: CallbackContext) -> int:
 
                 with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([context.user_data['video_url']])
-
-                update.message.reply_video(video=open(output_file, 'rb'))
+                try:
+                    update.message.reply_video(video=open(output_file, 'rb'))
+                except:
+                    update.message.reply_text(
+                        text=f"Looks like something went wrong uploading the video. "
+                             f"It possibly is bigger than 50Mb. "
+                             f"Here's an alternative link you can use "
+                             f"{context.user_data['video_options'][update.message.text]['url']}")
 
         except Exception as a:
             print(a)
