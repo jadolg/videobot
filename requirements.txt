@@ -1,4 +1,4 @@
 humanize==3.4.1
 python-telegram-bot==13.4.1
-requests==2.31.0
+requests==2.32.0
 youtube-dl==2021.4.17
